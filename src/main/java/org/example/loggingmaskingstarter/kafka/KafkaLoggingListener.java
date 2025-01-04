@@ -3,8 +3,10 @@ package org.example.loggingmaskingstarter.kafka;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.loggingmaskingstarter.config.EndpointLoggingProperties;
 import org.example.loggingmaskingstarter.core.Masker;
+import org.example.loggingmaskingstarter.core.MaskingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
@@ -26,9 +28,9 @@ public class KafkaLoggingListener {
         this.maskers = maskers;
     }
 
-    @KafkaListner(topics = "test-topic")
+    @KafkaListener(topics = "test-topic")
     public void receive(@Payload String message) {
-        if (Objects.isNull(message) || properties.maskingEnabled() == false) {
+        if (Objects.isNull(message) || !properties.maskingEnabled()) {
             log.info("Сообщение из Kafka: {}", message);
             return;
         }
