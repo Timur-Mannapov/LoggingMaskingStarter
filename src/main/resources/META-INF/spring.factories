@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.AutoConfiguration.imports=org.example.loggingmaskingstarter.config.LoggingAutoConfiguration
+org.springframework.boot.env.EnvironmentPostProcessor=org.example.loggingmaskingstarter.logging.LoggingEnvironmentPostProcessor
+org.springframework.boot.diagnostics.FailureAnalyzer=org.example.loggingmaskingstarter.logging.LoggingFailureAnalyzer
