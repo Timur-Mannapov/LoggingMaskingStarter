@@ -15,9 +15,9 @@ public class EndpointLoggingProperties {
     private boolean maskingEnabled = false;
 
     @Setter
-    private int requestBodySizeLimit = 1024; // Размер тела запроса в байтах
+    private int requestBodySizeLimit = 1024;
     @Setter
-    private int responseBodySizeLimit = 1024; // Размер тела ответа в байтах
+    private int responseBodySizeLimit = 1024;
 
 
     private Map<String, MaskingConfig> maskingRules;

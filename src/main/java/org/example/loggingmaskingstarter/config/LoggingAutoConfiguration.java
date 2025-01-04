@@ -12,7 +12,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @AutoConfiguration
 @EnableConfigurationProperties(EndpointLoggingProperties.class)
@@ -24,6 +26,18 @@ public class LoggingAutoConfiguration {
     public LoggingInterceptor loggingInterceptor(EndpointLoggingProperties properties, Map<String, Masker> maskers, ObjectMapper objectMapper) {
         return new LoggingInterceptor(properties, maskers, objectMapper);
     }
+
+    @Bean
+    public ObjectMapper objectMapper(){
+        return new ObjectMapper();
+    }
+
+    @Bean
+    public Map<String, Masker> maskers(List<Masker> maskers) {
+        return maskers.stream()
+                .collect(Collectors.toMap(masker -> masker.getClass().getSimpleName(), masker -> masker));
+    }
+
 
     @Bean
     @ConditionalOnBean(name = "loggingInterceptor")
