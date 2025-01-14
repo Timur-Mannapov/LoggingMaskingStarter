@@ -20,6 +20,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Интерсептор для логирования HTTP-запросов и ответов.
+ * Выполняет логирование и маскировку данных.
+ */
 @Component
 public class LoggingInterceptor implements HandlerInterceptor {
 
@@ -31,12 +35,29 @@ public class LoggingInterceptor implements HandlerInterceptor {
 
     private final ObjectMapper objectMapper;
 
+    /**
+     * Конструктор {@link LoggingInterceptor}.
+     *
+     * @param properties Настройки логирования и маскирования.
+     * @param maskers Мапа всех доступных маскировщиков.
+     * @param objectMapper Объект для сериализации и десериализации JSON.
+     */
     public LoggingInterceptor(EndpointLoggingProperties properties, Map<String, Masker> maskers, ObjectMapper objectMapper) {
         this.properties = properties;
         this.maskers = maskers;
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Выполняется перед обработкой запроса.
+     * Записывает время начала обработки запроса.
+     *
+     * @param request  HTTP-запрос.
+     * @param response HTTP-ответ.
+     * @param handler  Обработчик запроса.
+     * @return true для продолжения обработки запроса.
+     * @throws Exception  в случае ошибки.
+     */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         long start = System.currentTimeMillis();
@@ -44,6 +65,16 @@ public class LoggingInterceptor implements HandlerInterceptor {
         return true;
     }
 
+    /**
+     * Выполняется после завершения обработки запроса.
+     * Логирует запрос и ответ, выполняет маскировку.
+     *
+     * @param request  HTTP-запрос.
+     * @param response HTTP-ответ.
+     * @param handler  Обработчик запроса.
+     * @param ex       Исключение, которое было выброшено (если есть).
+     * @throws Exception в случае ошибки.
+     */
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
         long start = (long) request.getAttribute(START_TIME_ATTRIBUTE);
@@ -72,6 +103,13 @@ public class LoggingInterceptor implements HandlerInterceptor {
         log.info("Лог HTTP {}", httpLog);
     }
 
+    /**
+     * Маскирует тело запроса или ответа.
+     *
+     * @param body Входное тело.
+     * @param path Путь к телу (например, "request.body" или "response.body")
+     * @return Замаскированное тело.
+     */
     private String maskBody(String body, String path) {
         if (Objects.isNull(body) || Objects.isNull(properties.maskingRules())) {
             return body;
@@ -82,7 +120,13 @@ public class LoggingInterceptor implements HandlerInterceptor {
                 .orElse(body);
     }
 
-
+    /**
+     * Маскирует заголовки запроса или ответа.
+     *
+     * @param headers заголовки для маскировки.
+     * @param headerType Тип заголовков ("request.headers" или "response.headers").
+     * @return замаскированные заголовки.
+     */
     private Map<String, String> maskHeaders(Map<String, String> headers, String headerType) {
         if(Objects.isNull(properties.maskingRules()) || headers.isEmpty()){
             return headers;
@@ -104,6 +148,13 @@ public class LoggingInterceptor implements HandlerInterceptor {
         return maskedHeaders;
     }
 
+    /**
+     * Получает тело запроса.
+     *
+     * @param request HTTP запрос.
+     * @return Тело запроса
+     * @throws IOException в случае ошибки.
+     */
     private String getRequestBody(HttpServletRequest request) throws IOException {
         if(request.getContentType() == null || !request.getContentType().contains(MediaType.APPLICATION_JSON_VALUE)){
             return "";
@@ -112,7 +163,13 @@ public class LoggingInterceptor implements HandlerInterceptor {
         return limitBody(StreamUtils.copyToString(request.getInputStream(), StandardCharsets.UTF_8), maxBodySize);
     }
 
-
+    /**
+     * Получает тело ответа.
+     *
+     * @param response HTTP-ответ
+     * @return Тело ответа
+     * @throws IOException в случае ошибки.
+     */
     private String getResponseBody(HttpServletResponse response) throws IOException {
         if(response.getContentType() == null || !response.getContentType().contains(MediaType.APPLICATION_JSON_VALUE)){
             return "";
@@ -125,6 +182,13 @@ public class LoggingInterceptor implements HandlerInterceptor {
         return limitBody(new String(bodyBytes, StandardCharsets.UTF_8), maxBodySize);
     }
 
+    /**
+     * Ограничивает размер тела
+     *
+     * @param body тело.
+     * @param maxBodySize максимальный размер тела.
+     * @return обрезанное тело.
+     */
     private String limitBody(String body, int maxBodySize) {
         if (body.length() > maxBodySize) {
             return body.substring(0, maxBodySize) + "... (truncated)";
@@ -132,7 +196,12 @@ public class LoggingInterceptor implements HandlerInterceptor {
         return body;
     }
 
-
+    /**
+     * Получает заголовки запроса.
+     *
+     * @param request HTTP-запрос.
+     * @return Map с заголовками.
+     */
     public Map<String, String> getHeader(HttpServletRequest request) {
         Map<String, String> headers = new HashMap<>();
         Enumeration<String> headerNames = request.getHeaderNames();
@@ -144,6 +213,12 @@ public class LoggingInterceptor implements HandlerInterceptor {
         return headers;
     }
 
+    /**
+     * Получает заголовки ответа.
+     *
+     * @param response HTTP-ответ
+     * @return Map с заголовками.
+     */
     public Map<String, String> getHeader(HttpServletResponse response) {
         Map<String, String> headers = new HashMap<>();
         for (String header : response.getHeaderNames()) {
@@ -153,6 +228,19 @@ public class LoggingInterceptor implements HandlerInterceptor {
         return headers;
     }
 
+    /**
+     * Создает сообщение лога HTTP
+     *
+     * @param method HTTP метод
+     * @param requestURL URI запроса
+     * @param statusCode статус
+     * @param duration время выполнения
+     * @param requestHeaders заголовки запроса
+     * @param responseHeaders заголовки ответа
+     * @param requestBody тело запроса
+     * @param responseBody тело ответа
+     * @return созданный обьект HttpLog
+     */
     private HttpLog createMessage(String method, String requestURL, int statusCode, long duration,
                                   Map<String, String> requestHeaders,
                                   Map<String, String> responseHeaders, String requestBody, String responseBody) {

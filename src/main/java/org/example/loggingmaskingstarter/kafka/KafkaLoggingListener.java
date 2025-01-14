@@ -14,6 +14,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Слушатель Kafka, который логирует и маскирует сообщения.
+ */
 @Component
 public class KafkaLoggingListener {
     private static final Logger log = LoggerFactory.getLogger(KafkaLoggingListener.class);
@@ -21,13 +24,23 @@ public class KafkaLoggingListener {
     private final ObjectMapper objectMapper;
     private final Map<String, Masker> maskers;
 
-
+    /**
+     * Конструктор {@link KafkaLoggingListener}.
+     *
+     * @param properties  Настройки логирования и маскирования.
+     * @param objectMapper  Объект для сериализации и десериализации JSON.
+     * @param maskers Мапа всех доступных маскировщиков.
+     */
     public KafkaLoggingListener(EndpointLoggingProperties properties, ObjectMapper objectMapper, Map<String, Masker> maskers) {
         this.properties = properties;
         this.objectMapper = objectMapper;
         this.maskers = maskers;
     }
-
+    /**
+     * Обрабатывает сообщения из Kafka.
+     *
+     * @param message Сообщение из Kafka.
+     */
     @KafkaListener(topics = "test-topic")
     public void receive(@Payload String message) {
         if (Objects.isNull(message) || !properties.maskingEnabled()) {
@@ -38,6 +51,13 @@ public class KafkaLoggingListener {
         log.info("Сообщение из Kafka: {}", maskedMessage);
 
     }
+
+    /**
+     * Маскирует сообщение Kafka, если это необходимо.
+     *
+     * @param message Сообщение Kafka.
+     * @return Замаскированное сообщение.
+     */
     private String maskMessage(String message){
         if(Objects.isNull(properties.maskingRules())){
             return message;
